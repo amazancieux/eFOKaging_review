@@ -36,13 +36,13 @@ MetaDF %<>%
 
 # Prepare data for meta-analysis
 Meta_mean <- MetaDF %>% 
-  dcast(Paper + recog_type ~ Group, value.var = "Gamma", mean)
+  dcast(Paper ~ Group, value.var = "Gamma", mean)
 
 Meta_sd <- MetaDF %>% 
-  dcast(Paper + recog_type ~ Group, value.var = "Gamma", sd)
+  dcast(Paper ~ Group, value.var = "Gamma", sd)
 
 Meta_pp <- MetaDF %>% 
-  dcast(Paper + recog_type ~ Group, value.var = "Gamma")
+  dcast(Paper ~ Group, value.var = "Gamma")
 
 
 ## Run first meta-analysis using metafor  -------------------------
@@ -63,51 +63,75 @@ forest(ma_model, slab = Meta_mean$Paper)
 funnel(ma_model)
 
 
-## Use recall as a covriate to control for memory performance --------------------------------------
-
-crlt_perf <- data.frame()
-
-
 ## Match sample according to memory performance  --------------------------------------
 
 # Calculate median for each group
-# recall <- MetaDF %>% 
-#   group_by(Paper, Group) %>% 
-#   summarise(median = median(Recall))
-# 
-# match <- MetaDF
-# study <- unique(MetaDF$Paper)
-# group <- unique(MetaDF$Group)
-# 
-# match <- MetaDF %>% 
-#   mutate(Pp = seq(1:nrow(MetaDF)) %>% 
-#   dcast(Paper + Pp ~ Group, value.var = Gamma)
-# 
-# 
-# if (match$Paper == i & match$Group == g){
-#   match %<>%
-#     mutate()
-# }
-# 
-# match <- MetaDF %>% 
-#   mutate(Median = case_when()
-# 
-# for (i in study) {
-#   
-#   for (g in group){
-#     
-#     match %<>%
-#       filter(if (Paper == i & Group == g) Recall <= recall$median[recall$Paper == i & recall$Group == g])
-#   }
-# }  
-# 
-# match %<>%
-#   mutate(
-#   filter(if (Paper == i & Group == g) Recall <= recall$median[recall$Paper == i & recall$Group == g])
-#   
-# median <- 
-#   
-# match_perf <- MetaDF %>% 
-#   mutate(median = case_when(
-    
+recall <- MetaDF %>%
+  group_by(Paper, Group) %>%
+  summarise(median = median(Recall))
+
+# Prepare data for median list 
+Meta_pp %<>%
+  select(-recog_type) %>% 
+  gather(Group, sample_size, -Paper) 
+
+match <- MetaDF
+study <- unique(MetaDF$Paper)
+group <- unique(MetaDF$Group)
+
+# Create median list for each study and each group
+median_list <- data.frame()
+      
+for (s in study) {
+
+  for (g in group){
+    median <- rep(recall$median[recall$Paper == s & recall$Group == g], 
+               Meta_pp$sample_size[Meta_pp$Paper == s & Meta_pp$Group == g])
+    median <- data.frame(median)
+    median_list %<>% rbind(median) 
+  }
+}
+
+# Filter pp > median for older adults and pp < median for young
+match <- MetaDF %>% 
+  select(Paper, Group, Gamma, Recall) %>% 
+  cbind(median_list) %>% 
+  mutate(filter = case_when(
+    Group == 'Old' & Recall >= median ~ 1,
+    Group == 'Old' & Recall <= median ~ 0,
+    Group == 'Young' & Recall <= median ~ 1,
+    Group == 'Young' & Recall >= median ~ 0)) %>% 
+  filter(filter == 1)
+
+# Prepare data for meta-analysis #2
+Meta_mean2 <- match %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", mean)
+
+Meta_sd2 <- match %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", sd)
+
+Meta_pp2 <- match %>% 
+  dcast(Paper ~ Group, value.var = "Gamma")
+
+
+# Calculate effet size and their variance #2
+Effect2 <- escalc(n1i = Meta_pp2$Young, n2i = Meta_pp2$Old, m1i = Meta_mean2$Young, m2i = Meta_mean2$Old, 
+                 sd1i = Meta_sd2$Young, sd2i = Meta_sd2$Old, measure = "SMD", 
+                 append = TRUE)
+
+# Create model #2
+ma_model2 <- rma(yi, vi, data = Effect2)
+summary(ma_model2)
+
+# Forest plot #2
+forest(ma_model2, slab = Meta_mean2$Paper)
+
+# Funnel plot #2 
+funnel(ma_model2)
+
+
+
+## Use recall as a covriate to control for memory performance --------------------------------------
+
+crlt_perf <- data.frame()
 
