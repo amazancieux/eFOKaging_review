@@ -69,13 +69,13 @@ ma_model <- rma(yi, vi, data = Effect)
 summary(ma_model)
 
 # Forest plot
-jpeg(file="forest_meta1.jpeg",
+jpeg(file="./figures/forest_meta1.jpeg",
      width=8, height=4.5, units="in", res=300)
 forest(ma_model, slab = Meta_mean$Paper)
 dev.off()
 
 # Funnel plot 
-jpeg(file="funnel_meta1.jpeg",
+jpeg(file="./figures/funnel_meta1.jpeg",
      width=8, height=6, units="in", res=300)
 funnel(ma_model)
 dev.off()
@@ -100,13 +100,13 @@ ma_model2 <- rma(yi, vi, data = Effect2)
 summary(ma_model2)
 
 # Forest plot 
-jpeg(file="forest_meta2.jpeg",
+jpeg(file="./figures/forest_meta2.jpeg",
      width=8, height=4.5, units="in", res=300)
 forest(ma_model2, slab = Meta_mean2$Paper)
 dev.off()
 
 # Funnel plot 
-jpeg(file="funnel_meta2.jpeg",
+jpeg(file="./figures/funnel_meta2.jpeg",
      width=8, height=6, units="in", res=300)
 funnel(ma_model2)
 dev.off()
@@ -172,13 +172,13 @@ ma_model3 <- rma(yi, vi, data = Effect3)
 summary(ma_model3)
 
 # Forest plot 
-jpeg(file="forest_meta3.jpeg",
+jpeg(file="./figures/forest_meta3.jpeg",
      width=8, height=4.5, units="in", res=300)
 forest(ma_model3, slab = Meta_mean3$Paper)
 dev.off()
 
 # Funnel plot
-jpeg(file="funnel_meta3.jpeg",
+jpeg(file="./figures/funnel_meta3.jpeg",
      width=8, height=6, units="in", res=300)
 funnel(ma_model3)
 dev.off()
