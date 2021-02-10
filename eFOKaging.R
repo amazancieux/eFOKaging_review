@@ -33,8 +33,8 @@ MetaDF %<>%
     Paper == article[1] ~ "Souchay et al. (2007) - Exp1",
     Paper == article[2] ~ "Souchay et al. (2007) - Exp2", 
     Paper == article[3] ~ "Souchay & Isingrini (2012)", 
-    Paper == article[4] ~ "Souchay et al (2000)",
-    Paper == article[5] ~ "Which paper is it?",
+    Paper == article[4] ~ "Which paper?",
+    Paper == article[5] ~ "Souchay et al (2000)",
     Paper == article[6] ~ "Perrotin et al. (2006)"))
     
 # Calculate corrected gamma
@@ -181,6 +181,51 @@ dev.off()
 jpeg(file="./figures/funnel_meta3.jpeg",
      width=8, height=6, units="in", res=300)
 funnel(ma_model3)
+dev.off()
+
+
+# Meta-analysis using the reverse dataset 
+# Filter pp < median for older adults and pp > median for young
+match2 <- MetaDF %>% 
+  select(Paper, Group, Gamma, Recall) %>% 
+  cbind(median_list) %>% 
+  mutate(filter = case_when(
+    Group == 'Old' & Recall >= median ~ 1,
+    Group == 'Old' & Recall <= median ~ 0,
+    Group == 'Young' & Recall <= median ~ 1,
+    Group == 'Young' & Recall >= median ~ 0)) %>% 
+  filter(filter == 0)
+
+# Prepare data 
+Meta_mean3.2 <- match2 %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", mean)
+
+Meta_sd3.2 <- match2 %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", sd)
+
+Meta_pp3.2 <- match2 %>% 
+  dcast(Paper ~ Group, value.var = "Gamma")
+
+
+# Calculate effet size and their variance 
+Effect3.2 <- escalc(n1i = Meta_pp3.2$Young, n2i = Meta_pp3.2$Old, m1i = Meta_mean3.2$Young, m2i = Meta_mean3.2$Old, 
+                  sd1i = Meta_sd3.2$Young, sd2i = Meta_sd3.2$Old, measure = "SMD", 
+                  append = TRUE)
+
+# Create model 
+ma_model3.2 <- rma(yi, vi, data = Effect3.2)
+summary(ma_model3.2)
+
+# Forest plot 
+jpeg(file="./figures/forest_meta3.2.jpeg",
+     width=8, height=4.5, units="in", res=300)
+forest(ma_model3.2, slab = Meta_mean3.2$Paper)
+dev.off()
+
+# Funnel plot
+jpeg(file="./figures/funnel_meta3.2.jpeg",
+     width=8, height=6, units="in", res=300)
+funnel(ma_model3.2)
 dev.off()
 
 
