@@ -26,7 +26,8 @@ data_all_FOK <-read.csv2("Data_all_FOKs.csv", header=TRUE, sep=",", dec=".", fil
 # create dataframe for sensitivity measures
 sensitivity <- data_all_FOK %>% 
   select(ref = Reference,
-         measure = Type.of.sensitivity.measure,
+         perf_ctrl = attempt.to.control.for.performance.in.design,
+         task = Task,
          n_YA = Sample_size_YA,
          n_OA = Sample_Size_OA,
          sensitivity_mean_YA = Sensitivity_mean__YA,
@@ -58,27 +59,52 @@ for (refs in 1:nrow(sensitivity)){
 
 # add references column 
 refs = c(sensitivity[1])
+task = c(sensitivity[3])
 effects_all_studies <- eff_size_all_studies %>% 
-  cbind(var_all_studies)
+  cbind(var_all_studies) %>% 
 effects_all_studies %<>%
   cbind(refs)
+effects_all_studies %<>%
+  cbind(task)
 
 
-## Meta-analysis --------------------------------------------------------
+## eFOK meta-analysis --------------------------------------------------------
 
 # create model
-meta_model <- rma(es, var, data=effects_all_studies)
-summary(meta_model)
+eFOK_data <- effects_all_studies %>% 
+  filter(task == "Episodic")
+eFOK_meta_model <- rma(es, var, data=eFOK_data)
+summary(eFOK_meta_model)
 
 # forest plot
-jpeg(file="./figures/forest_meta_all.jpeg",
+jpeg(file="./figures/forest_eFOK_meta_all.jpeg",
      width=10, height=8, units="in", res=300)
-forest(meta_model, slab = effects_all_studies$ref)
+forest(eFOK_meta_model, slab = eFOK_data$ref)
 dev.off()
 
 # funnel plot 
-jpeg(file="./figures/funnel_meta_all.jpeg",
+jpeg(file="./figures/funnel_eFOK_meta_all.jpeg",
      width=8, height=6, units="in", res=300)
-funnel(meta_model)
+funnel(eFOK_meta_model)
 dev.off()
-  
+
+
+## sFOK meta-analysis --------------------------------------------------------
+
+# create model
+sFOK_data <- effects_all_studies %>% 
+  filter(task == "semantic")
+sFOK_meta_model <- rma(es, var, data=sFOK_data)
+summary(sFOK_meta_model)
+
+# forest plot
+jpeg(file="./figures/forest_sFOK_meta_all.jpeg",
+     width=10, height=8, units="in", res=300)
+forest(sFOK_meta_model, slab = sFOK_data$ref)
+dev.off()
+
+# funnel plot 
+jpeg(file="./figures/funnel_sFOK_meta_all.jpeg",
+     width=8, height=6, units="in", res=300)
+funnel(sFOK_meta_model)
+dev.off()  
