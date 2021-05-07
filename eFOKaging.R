@@ -1,7 +1,7 @@
 
 ################################
 
-# Script for the meta-analysis of the folowing article (in preparation): 
+# Script for the sub meta-analysis of the folowing article (in preparation): 
 # Episodic and semantic FOK in aging: Systematic review & meta-analyses
 
 # Audrey Mazancieux 2020
@@ -16,6 +16,7 @@ library(magrittr)
 library(reshape2)
 library(metafor)
 library(broom)
+library(esc)
 
 
 ## Import and arrange data  -------------------------
@@ -33,17 +34,17 @@ MetaDF %<>%
     Paper == article[1] ~ "Souchay et al. (2007) - Exp1",
     Paper == article[2] ~ "Souchay et al. (2007) - Exp2", 
     Paper == article[3] ~ "Souchay & Isingrini (2012)", 
-    Paper == article[4] ~ "Which paper?",
+    Paper == article[4] ~ "Unpublished data",
     Paper == article[5] ~ "Souchay et al (2000)",
     Paper == article[6] ~ "Perrotin et al. (2006)"))
     
 # Calculate corrected gamma
 MetaDF %<>%
-  mutate(A_c = ifelse(A == 0, 0.5, A),
-         B_c = ifelse(B == 0, 0.5, B),
-         C_c = ifelse(C == 0, 0.5, C),
-         D_c = ifelse(D == 0, 0.5, D),
-         Gamma = ((A_c*D_c - B_c*C_c) / (A_c*D_c + B_c*C_c)),
+  mutate(A_freq = (0.5+A) / (num_item4gamma+1),
+         B_freq = (0.5+B) / (num_item4gamma+1),
+         C_freq = (0.5+C) / (num_item4gamma+1),
+         D_freq = (0.5+D) / (num_item4gamma+1),
+         Gamma = ((A_freq*D_freq - B_freq*C_freq) / (A_freq*D_freq + B_freq*C_freq)),
          Group = ifelse(Group == 1, "Young", "Old"))
 
 # Prepare data for meta-analysis
@@ -60,12 +61,40 @@ Meta_pp <- MetaDF %>%
 ## Meta1: corrected gamma across OA and YA -------------------------------------------------------------------
 
 # Calculate effet size and their variance
-Effect <- escalc(n1i = Meta_pp$Young, n2i = Meta_pp$Old, m1i = Meta_mean$Young, m2i = Meta_mean$Old, 
-                 sd1i = Meta_sd$Young, sd2i = Meta_sd$Old, measure = "SMD", 
-                 append = TRUE)
+# Effect <- escalc(n1i = Meta_pp$Young, n2i = Meta_pp$Old, m1i = Meta_mean$Young, m2i = Meta_mean$Old, 
+#                  sd1i = Meta_sd$Young, sd2i = Meta_sd$Old, measure = "SMD", 
+#                  append = TRUE)
+
+
+# Calculate effet size and their variance
+eff_size1 <- data.frame()
+var1 <- data.frame()
+
+for (refs in 1:nrow(Meta_pp)){
+  
+  effect_size1 <- esc_mean_sd(grp1m = Meta_mean$Young[refs], 
+                             grp1sd = Meta_sd$Young[refs], 
+                             grp1n = Meta_pp$Young[refs],
+                             grp2m = Meta_mean$Old[refs], 
+                             grp2sd = Meta_sd$Old[refs], 
+                             grp2n = Meta_pp$Old[refs], 
+                             es.type = "g")
+  
+  g_hedge <- effect_size1[1]
+  sampling_var <- effect_size1[3] 
+  eff_size1 %<>% rbind(g_hedge)
+  var1 %<>% rbind(sampling_var) 
+}
+
+# add references column 
+refs = c(Meta_pp[1])
+Effect <- eff_size1 %>% 
+  cbind(var1)
+Effect %<>%
+  cbind(refs)
 
 # Create model
-ma_model <- rma(yi, vi, data = Effect)
+ma_model <- rma(es, var, data = Effect)
 summary(ma_model)
 
 # Forest plot
