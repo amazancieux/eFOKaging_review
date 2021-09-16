@@ -17,6 +17,7 @@ library(reshape2)
 library(metafor)
 library(broom)
 library(esc)
+source("var_comp_func.R")
 
 
 ## Import and arrange data  -------------------------
@@ -100,7 +101,15 @@ eFOK_meta_model <- rma.mv(es,
                                         ~ 1 | exp,
                                         ~ 1 | authors),
                           data = eFOK_data)
+
 summary(eFOK_meta_model)
+
+# I² calculation
+W <- diag(1/eFOK_data$var)
+X <- model.matrix(eFOK_meta_model)
+P <- W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+I2_tot <- sum(100 * eFOK_meta_model$sigma2) / (sum(eFOK_meta_model$sigma2) + (eFOK_meta_model$k-eFOK_meta_model$p)/sum(diag(P)))
+I2 <- 100 * eFOK_meta_model$sigma2/ (sum(eFOK_meta_model$sigma2) + (eFOK_meta_model$k-eFOK_meta_model$p)/sum(diag(P)))
 
 # forest plot
 jpeg(file="./figures/forest_eFOK_meta_all.jpeg",
@@ -114,20 +123,6 @@ jpeg(file="./figures/funnel_eFOK_meta_all.jpeg",
 funnel(eFOK_meta_model)
 dev.off()
 
-# test of moderator: attempt to control for task performance
-epi <- sensitivity %>% filter(task == "Episodic")
-perf_ctrl <- ifelse(epi$perf_ctrl == 'no', -0.5, 0.5)
-eFOK_data %<>%
-  mutate(perf_ctrl = perf_ctrl)
-
-eFOK_reg1_model <- rma.mv(es, 
-                          var, 
-                          mods = perf_ctrl,
-                          random = list(~ 1 | effect,
-                                        ~ 1 | exp,
-                                        ~ 1 | authors),
-                          data = eFOK_data)
-summary(eFOK_reg1_model)
 
 # test of moderator: group difference effect size for recall
 eff_size_recall <- data.frame()
@@ -155,14 +150,15 @@ eff_size_recall %<>%
 eFOK_data %<>% 
   cbind(recall = eff_size_recall$es)
 
-eFOK_reg2_model <- rma.mv(es, 
+eFOK_reg1_model <- rma.mv(es, 
                           var, 
                           mods = recall,
                           random = list(~ 1 | effect,
                                         ~ 1 | exp,
                                         ~ 1 | authors),
                           data = eFOK_data)
-summary(eFOK_reg2_model)
+
+summary(eFOK_reg1_model)
 
 # test of moderator: group difference effect size for recognition
 eff_size_recog <- data.frame()
@@ -225,7 +221,14 @@ summary(eFOK_reg4_model)
 # create model
 sFOK_data <- effects_all_studies %>% 
   filter(task == "semantic")
-sFOK_meta_model <- rma.mv(es, var, random = ~ 1 | ref, data=sFOK_data)
+
+sFOK_meta_model <- rma.mv(es, 
+                          var, 
+                          random = list(~ 1 | effect,
+                                        ~ 1 | exp,
+                                        ~ 1 | authors),
+                          data = sFOK_data)
+
 summary(sFOK_meta_model)
 
 # forest plot
@@ -239,3 +242,11 @@ jpeg(file="./figures/funnel_sFOK_meta_all.jpeg",
      width=8, height=6, units="in", res=300)
 funnel(sFOK_meta_model)
 dev.off()  
+
+# I² calculation
+W <- diag(1/sFOK_data$var)
+X <- model.matrix(sFOK_meta_model)
+P <- W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+I2_tot <- sum(100 * sFOK_meta_model$sigma2) / (sum(sFOK_meta_model$sigma2) + (sFOK_meta_model$k-sFOK_meta_model$p)/sum(diag(P)))
+I2 <- 100 * sFOK_meta_model$sigma2/ (sum(sFOK_meta_model$sigma2) + (sFOK_meta_model$k-sFOK_meta_model$p)/sum(diag(P)))
+
