@@ -44,7 +44,8 @@ sensitivity <- data_all_FOK %>%
          recog_mean_YA = Recog_mean_YA,
          recog_sdt_YA = Recog_SD_YA,
          recog_mean_OA = Recog_mean_OA,
-         recog_sdt_OA = Reco_SD_OA)
+         recog_sdt_OA = Reco_SD_OA,
+         recog_type = Recog.type)
 
 # exclude Hertzog (2010) - 30min condition
 sensitivity %<>% 
@@ -197,6 +198,26 @@ eFOK_reg3_model <- rma.mv(es,
                                         ~ 1 | authors),
                           data = eFOK_data)
 summary(eFOK_reg3_model)
+
+# forest plot
+jpeg(file="./figures/forest_eFOK_meta_recog_mod.jpeg",
+     width=13, height=8, units="in", res=300)
+forest(eFOK_reg3_model, slab = eFOK_data$ref)
+dev.off()
+
+# test of moderator: type of recognition
+recog_type = epi$recog_type
+eFOK_data %<>%
+  mutate(recog_type = recog_type)
+
+eFOK_reg4_model <- rma.mv(es, 
+                          var, 
+                          mods = recog_type,
+                          random = list(~ 1 | effect,
+                                        ~ 1 | exp,
+                                        ~ 1 | authors),
+                          data = eFOK_data)
+summary(eFOK_reg4_model)
 
 
 ## sFOK meta-analysis --------------------------------------------------------
