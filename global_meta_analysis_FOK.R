@@ -17,7 +17,6 @@ library(reshape2)
 library(metafor)
 library(broom)
 library(esc)
-source("var_comp_func.R")
 
 
 ## Import and arrange data  -------------------------
@@ -186,14 +185,14 @@ eff_size_recog %<>%
 eFOK_data %<>% 
   cbind(recog = eff_size_recog$es)
 
-eFOK_reg3_model <- rma.mv(es, 
+eFOK_reg2_model <- rma.mv(es, 
                           var, 
                           mods = recog,
                           random = list(~ 1 | effect,
                                         ~ 1 | exp,
                                         ~ 1 | authors),
                           data = eFOK_data)
-summary(eFOK_reg3_model)
+summary(eFOK_reg2_model)
 
 # forest plot
 jpeg(file="./figures/forest_eFOK_meta_recog_mod.jpeg",
@@ -202,18 +201,18 @@ forest(eFOK_reg3_model, slab = eFOK_data$ref)
 dev.off()
 
 # test of moderator: type of recognition
-recog_type = epi$recog_type
+recog_type <- epi$recog_type
 eFOK_data %<>%
   mutate(recog_type = recog_type)
 
-eFOK_reg4_model <- rma.mv(es, 
+eFOK_reg3_model <- rma.mv(es, 
                           var, 
                           mods = recog_type,
                           random = list(~ 1 | effect,
                                         ~ 1 | exp,
                                         ~ 1 | authors),
                           data = eFOK_data)
-summary(eFOK_reg4_model)
+summary(eFOK_reg3_model)
 
 
 ## sFOK meta-analysis --------------------------------------------------------
@@ -233,7 +232,7 @@ summary(sFOK_meta_model)
 
 # forest plot
 jpeg(file="./figures/forest_sFOK_meta_all.jpeg",
-     width=10, height=8, units="in", res=300)
+     width=13, height=8, units="in", res=300)
 forest(sFOK_meta_model, slab = sFOK_data$ref)
 dev.off()
 
