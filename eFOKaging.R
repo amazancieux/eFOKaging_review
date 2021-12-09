@@ -61,12 +61,6 @@ Meta_pp <- MetaDF %>%
 ## Meta1: corrected gamma across OA and YA -------------------------------------------------------------------
 
 # Calculate effet size and their variance
-# Effect <- escalc(n1i = Meta_pp$Young, n2i = Meta_pp$Old, m1i = Meta_mean$Young, m2i = Meta_mean$Old, 
-#                  sd1i = Meta_sd$Young, sd2i = Meta_sd$Old, measure = "SMD", 
-#                  append = TRUE)
-
-
-# Calculate effet size and their variance
 eff_size1 <- data.frame()
 var1 <- data.frame()
 
@@ -120,7 +114,7 @@ Meta_sd2 <- MetaDF %>%
   dcast(Paper ~ Group, value.var = "Recall", sd)
 
 # Calculate effet size and their variance 
-Effect2 <- escalc(n1i = Meta_pp2$Young, n2i = Meta_pp2$Old, m1i = Meta_mean2$Young, m2i = Meta_mean2$Old, 
+Effect2 <- escalc(n1i = Meta_pp$Young, n2i = Meta_pp$Old, m1i = Meta_mean2$Young, m2i = Meta_mean2$Old, 
                   sd1i = Meta_sd2$Young, sd2i = Meta_sd2$Old, measure = "SMD", 
                   append = TRUE)
 
@@ -141,7 +135,7 @@ funnel(ma_model2)
 dev.off()
 
 
-## Meta3: corrected gamma when recall difference is decrease  --------------------------------------
+## Meta3: corrected gamma for 50% of the participants according to recall performance  --------------------------------------
 
 # Calculate median for each group
 recall <- MetaDF %>%
@@ -213,7 +207,6 @@ funnel(ma_model3)
 dev.off()
 
 
-# Meta-analysis using the reverse dataset 
 # Filter pp < median for older adults and pp > median for young
 match2 <- MetaDF %>% 
   select(Paper, Group, Gamma, Recall) %>% 
@@ -258,12 +251,14 @@ funnel(ma_model3.2)
 dev.off()
 
 
-## Meta4: recall as a covriate to control for memory performance --------------------------------------
+## Meta4: effect sizes for models wtih recall as a covariable  --------------------------------------
 
 crlt_perf <- MetaDF %>% 
   mutate(GroupC = ifelse(Group == "Old", -0.5, 0.5))
 
-reg_value <- data.frame()
+study <- Meta_pp$Paper
+es_value <- data.frame()
+var_value <- data.frame()
 
 # Compute linear model for each study
 for (s in study){
@@ -285,30 +280,152 @@ for (s in study){
   
   # results
   res <- summary(reg)
-  res <- tidy(res)
-  res <- as.numeric(res[2,])
-  
+  tidy_res <- tidy(res[[4]])
+  tidy_var = coef(res)[, "Std. Error"]
+
   # append dataframe
-  reg_value %<>% rbind(res) 
+  es_value %<>% rbind(tidy_res$x[2]) 
+  var_value %<>% rbind(tidy_var[2]) 
 }
 
 # Arrange dataframe
-colnames(reg_value) <- c("name", "estimate", "std", "t_value", "p_value") 
-reg_value %<>%
-  select(-name)
+data_m4 <- es_value %>% cbind(var_value) 
+colnames(data_m4)[1] <- "es"
+colnames(data_m4)[2] <- "se"
+Meta_pp %<>%
+  mutate(N = Old+Young)
+data_m4 %<>%
+  cbind(N = Meta_pp$N) %>% 
+  mutate(var = es/sqrt(N))
 
-# Calculate effet size and their variance #4
-# Effect4 <- escalc(n1i = Meta_pp2$Young, n2i = Meta_pp2$Old, m1i = Meta_mean3$Young, m2i = Meta_mean3$Old, 
-#                   sd1i = Meta_sd3$Young, sd2i = Meta_sd3$Old, measure = "SMD", 
-#                   append = TRUE)
+# Create model #4
+ma_model4 <- rma(es, var, data = data_m4)
+summary(ma_model4)
 
-# # Create model #4
-# ma_model4 <- rma(yi, vi, data = Effect4)
-# summary(ma_model4)
-# 
-# # Forest plot #4
-# forest(ma_model4, slab = Meta_mean4$Paper)
-# 
-# # Funnel plot #4
-# funnel(ma_model4)
+# Forest plot 
+jpeg(file="./figures/forest_meta4.jpeg",
+     width=8, height=4.5, units="in", res=300)
+forest(ma_model4, slab = study)
+dev.off()
+
+# Funnel plot
+jpeg(file="./figures/funnel_meta4.jpeg",
+     width=8, height=6, units="in", res=300)
+funnel(ma_model4)
+dev.off()
+
+
+## Exploratory analysis  ------------------------------------------------
+
+MetaDF %<>%
+  mutate(Hamann = ((A+D) - (B+C)) / num_item4gamma,
+         pH = ifelse(A+C == 0, 0.5/num_item4gamma, 
+                     ifelse(A == 0, 0.5/(A+C), A/(A+C))),
+         pFA = ifelse(B+D == 0, 0.5/num_item4gamma, 
+                      ifelse(B == 0, 0.5/(B+D), B/(B+D))),
+         d = ifelse(pH == 1 & pFA == 1, qnorm(((A+C)-0.5)/(A+C)) - qnorm(((B+D)-0.5)/(B+D)),
+                    ifelse(pH == 1, qnorm(((A+C)-0.5)/(A+C)) - qnorm(pFA),
+                           ifelse(pFA == 1, qnorm(pH) - qnorm(((B+D)-0.5)/(B+D)),
+                                  qnorm(pH) - qnorm(pFA)))))
+                           
+# Prepare data for meta-analysis
+Meta_mean_hamann <- MetaDF %>% 
+  dcast(Paper ~ Group, value.var = "Hamann", mean)
+
+Meta_sd_hamann <- MetaDF %>% 
+  dcast(Paper ~ Group, value.var = "Hamann", sd)
+
+Meta_mean_d <- MetaDF %>% 
+  dcast(Paper ~ Group, value.var = "d", mean)
+
+Meta_sd_d <- MetaDF %>% 
+  dcast(Paper ~ Group, value.var = "d", sd)
+
+
+# Meta model Hamman
+# Calculate effet size and their variance
+eff_size_hamann <- data.frame()
+var_hamann <- data.frame()
+
+for (refs in 1:nrow(Meta_pp)){
+  
+  effect_size1 <- esc_mean_sd(grp1m = Meta_mean_hamann$Young[refs], 
+                              grp1sd = Meta_sd_hamann$Young[refs], 
+                              grp1n = Meta_pp$Young[refs],
+                              grp2m = Meta_mean_hamann$Old[refs], 
+                              grp2sd = Meta_sd_hamann$Old[refs], 
+                              grp2n = Meta_pp$Old[refs], 
+                              es.type = "g")
+  
+  g_hedge <- effect_size1[1]
+  sampling_var <- effect_size1[3] 
+  eff_size_hamann %<>% rbind(g_hedge)
+  var_hamann %<>% rbind(sampling_var) 
+}
+
+# add references column 
+Effect_hamann <- eff_size_hamann %>% 
+  cbind(var1)
+Effect_hamann %<>%
+  cbind(refs)
+
+# Create model
+ma_model_hamann <- rma(es, var, data = Effect_hamann)
+summary(ma_model_hamann)
+
+# Forest plot
+jpeg(file="./figures/forest_meta_hamann.jpeg",
+     width=8, height=4.5, units="in", res=300)
+forest(ma_model_hamann, slab = Meta_mean_hamann$Paper)
+dev.off()
+
+# Funnel plot 
+jpeg(file="./figures/funnel_meta_hamann.jpeg",
+     width=8, height=6, units="in", res=300)
+funnel(ma_model_hamann)
+dev.off()
+
+
+# Meta model d'
+# Calculate effet size and their variance
+eff_size_d <- data.frame()
+var_d <- data.frame()
+
+for (refs in 1:nrow(Meta_pp)){
+  
+  effect_size1 <- esc_mean_sd(grp1m = Meta_mean_d$Young[refs], 
+                              grp1sd = Meta_sd_d$Young[refs], 
+                              grp1n = Meta_pp$Young[refs],
+                              grp2m = Meta_mean_d$Old[refs], 
+                              grp2sd = Meta_sd_d$Old[refs], 
+                              grp2n = Meta_pp$Old[refs], 
+                              es.type = "g")
+  
+  g_hedge <- effect_size1[1]
+  sampling_var <- effect_size1[3] 
+  eff_size_d %<>% rbind(g_hedge)
+  var_d %<>% rbind(sampling_var) 
+}
+
+# add references column 
+Effect_d <- eff_size_d %>% 
+  cbind(var1)
+Effect_d %<>%
+  cbind(refs)
+
+# Create model
+ma_model_d <- rma(es, var, data = Effect_d)
+summary(ma_model_d)
+
+# Forest plot
+jpeg(file="./figures/forest_meta_d.jpeg",
+     width=8, height=4.5, units="in", res=300)
+forest(ma_model_d, slab = Meta_mean_d$Paper)
+dev.off()
+
+# Funnel plot 
+jpeg(file="./figures/funnel_meta_d.jpeg",
+     width=8, height=6, units="in", res=300)
+funnel(ma_model_d)
+dev.off()
 
