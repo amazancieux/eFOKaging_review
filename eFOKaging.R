@@ -251,61 +251,67 @@ funnel(ma_model3.2)
 dev.off()
 
 
-## Meta4: effect sizes for models wtih recall as a covariable  --------------------------------------
+## Non-preregistered analyis: corrected gamma for 50% of the participants according to recognition performance  --------------------------------------
 
-crlt_perf <- MetaDF %>% 
-  mutate(GroupC = ifelse(Group == "Old", -0.5, 0.5))
+# Calculate median for each group
+recog <- MetaDF %>%
+  mutate(recog = Hits) %>% 
+  group_by(Paper, Group) %>%
+  summarise(median = median(recog))
 
-study <- Meta_pp$Paper
-es_value <- data.frame()
-var_value <- data.frame()
+# Prepare data for median list 
+Meta_pps <- Meta_pp %>% 
+  gather(Group, sample_size, -Paper) 
 
-# Compute linear model for each study
-for (s in study){
-  
-  # create a dataframe for this study 
-  crlt_perf_s <- crlt_perf %>% 
-    filter(Paper == s)
-  
-  # linear model
-  reg <- lm(Gamma ~ GroupC + Recall, crlt_perf_s)
-  
-  # linear regression checks 
-  qqnorm(residuals(reg))
-  qqline(residuals(reg))
-  
-  data.frame(x = residuals(reg)) %>% 
-    ggplot(aes(x = x)) +
-    geom_histogram()
-  
-  # results
-  res <- summary(reg)
-  tidy_res <- tidy(res[[4]])
-  tidy_var = coef(res)[, "Std. Error"]
+# Create median list for each study and each group
+median_recog_list <- data.frame()
 
-  # append dataframe
-  es_value %<>% rbind(tidy_res$x[2]) 
-  var_value %<>% rbind(tidy_var[2]) 
+for (s in study) {
+  
+  for (g in group){
+    median <- rep(recog$median[recog$Paper == s & recog$Group == g], 
+                  Meta_pps$sample_size[Meta_pps$Paper == s & Meta_pps$Group == g])
+    median <- data.frame(median)
+    median_recog_list %<>% rbind(median) 
+  }
 }
 
-# Arrange dataframe
-data_m4 <- es_value %>% cbind(var_value) 
-colnames(data_m4)[1] <- "es"
-colnames(data_m4)[2] <- "se"
-Meta_pp %<>%
-  mutate(N = Old+Young)
-data_m4 %<>%
-  cbind(N = Meta_pp$N) %>% 
-  mutate(var = es/sqrt(N))
+# Filter pp > median for older adults and pp < median for young
+match_recog <- MetaDF %>% 
+  select(Paper, Group, Gamma, Hits) %>% 
+  arrange(Paper) %>% 
+  cbind(median_recog_list) %>% 
+  mutate(filter = case_when(
+    Group == 'Old' & Hits >= median ~ 1,
+    Group == 'Old' & Hits <= median ~ 0,
+    Group == 'Young' & Hits <= median ~ 1,
+    Group == 'Young' & Hits >= median ~ 0)) %>% 
+  filter(filter == 1)
 
-# Create model #4
-ma_model4 <- rma(es, var, data = data_m4)
+# Prepare data 
+Meta_mean4 <- match_recog %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", mean)
+
+Meta_sd4 <- match_recog %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", sd)
+
+Meta_pp4 <- match_recog %>% 
+  dcast(Paper ~ Group, value.var = "Gamma")
+
+
+# Calculate effet size and their variance 
+Effect4 <- escalc(n1i = Meta_pp4$Young, n2i = Meta_pp4$Old, m1i = Meta_mean4$Young, m2i = Meta_mean4$Old, 
+                  sd1i = Meta_sd4$Young, sd2i = Meta_sd4$Old, measure = "SMD", 
+                  append = TRUE)
+
+# Create model 
+ma_model4 <- rma(yi, vi, data = Effect4)
 summary(ma_model4)
 
 # Forest plot 
 jpeg(file="./figures/forest_meta4.jpeg",
      width=8, height=4.5, units="in", res=300)
-forest(ma_model4, slab = study)
+forest(ma_model4, slab = Meta_mean4$Paper)
 dev.off()
 
 # Funnel plot
@@ -313,6 +319,116 @@ jpeg(file="./figures/funnel_meta4.jpeg",
      width=8, height=6, units="in", res=300)
 funnel(ma_model4)
 dev.off()
+
+
+# Filter pp < median for older adults and pp > median for young
+match_recog2 <- MetaDF %>% 
+  select(Paper, Group, Gamma, Hits) %>% 
+  arrange(Paper) %>% 
+  cbind(median_recog_list) %>% 
+  mutate(filter = case_when(
+    Group == 'Old' & Hits >= median ~ 1,
+    Group == 'Old' & Hits <= median ~ 0,
+    Group == 'Young' & Hits <= median ~ 1,
+    Group == 'Young' & Hits >= median ~ 0)) %>% 
+  filter(filter == 0)
+
+# Prepare data 
+Meta_mean4.2 <- match_recog2 %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", mean)
+
+Meta_sd4.2 <- match_recog2 %>% 
+  dcast(Paper ~ Group, value.var = "Gamma", sd)
+
+Meta_pp4.2 <- match_recog2 %>% 
+  dcast(Paper ~ Group, value.var = "Gamma")
+
+
+# Calculate effet size and their variance 
+Effect4.2 <- escalc(n1i = Meta_pp4.2$Young, n2i = Meta_pp4.2$Old, m1i = Meta_mean4.2$Young, m2i = Meta_mean4.2$Old, 
+                    sd1i = Meta_sd4.2$Young, sd2i = Meta_sd4.2$Old, measure = "SMD", 
+                    append = TRUE)
+
+# Create model 
+ma_model4.2 <- rma(yi, vi, data = Effect4.2)
+summary(ma_model4.2)
+
+# Forest plot 
+jpeg(file="./figures/forest_meta4.2.jpeg",
+     width=8, height=4.5, units="in", res=300)
+forest(ma_model4.2, slab = Meta_mean4.2$Paper)
+dev.off()
+
+# Funnel plot
+jpeg(file="./figures/funnel_meta4.2.jpeg",
+     width=8, height=6, units="in", res=300)
+funnel(ma_model4.2)
+dev.off()
+
+
+## Meta5: effect sizes for models wtih recall as a covariable  --------------------------------------
+
+# crlt_perf <- MetaDF %>%
+#   mutate(GroupC = ifelse(Group == "Old", -0.5, 0.5))
+# 
+# study <- Meta_pp$Paper
+# es_value <- data.frame()
+# var_value <- data.frame()
+# 
+# # Compute linear model for each study
+# for (s in study){
+# 
+#   # create a dataframe for this study
+#   crlt_perf_s <- crlt_perf %>%
+#     filter(Paper == s)
+# 
+#   # linear model
+#   reg <- lm(Gamma ~ GroupC + Recall, crlt_perf_s)
+#   reg <- lm(Gamma ~ GroupC * Recall, crlt_perf_s)
+# 
+#   # linear regression checks
+#   qqnorm(residuals(reg))
+#   qqline(residuals(reg))
+# 
+#   data.frame(x = residuals(reg)) %>%
+#     ggplot(aes(x = x)) +
+#     geom_histogram()
+# 
+#   # results
+#   res <- summary(reg)
+#   tidy_res <- tidy(res[[4]])
+#   tidy_var = coef(res)[, "Std. Error"]
+# 
+#   # append dataframe
+#   es_value %<>% rbind(tidy_res$x[2])
+#   var_value %<>% rbind(tidy_var[2])
+# }
+# 
+# # Arrange dataframe
+# data_m5 <- es_value %>% cbind(var_value)
+# colnames(data_m5)[1] <- "es"
+# colnames(data_m5)[2] <- "se"
+# Meta_pp %<>%
+#   mutate(N = Old+Young)
+# data_m4 %<>%
+#   cbind(N = Meta_pp$N) %>%
+#   mutate(var = es/sqrt(N))
+# 
+# # Create model #4
+# ma_model5 <- rma(es, var, data = data_m5)
+# summary(ma_model5)
+# 
+# # Forest plot
+# jpeg(file="./figures/forest_meta5.jpeg",
+#      width=8, height=4.5, units="in", res=300)
+# forest(ma_model5, slab = study)
+# dev.off()
+# 
+# # Funnel plot
+# jpeg(file="./figures/funnel_meta5.jpeg",
+#      width=8, height=6, units="in", res=300)
+# funnel(ma_model5)
+# dev.off()
 
 
 ## Exploratory analysis  ------------------------------------------------
