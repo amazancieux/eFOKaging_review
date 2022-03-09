@@ -122,6 +122,16 @@ jpeg(file="./figures/funnel_eFOK_meta_all.jpeg",
 funnel(eFOK_meta_model)
 dev.off()
 
+# test asymmetry (Egger's test)
+test.egger <- rma.mv(es, 
+                     var, 
+                     mod = var,
+                     random = list(~ 1 | effect,
+                                   ~ 1 | exp,
+                                   ~ 1 | authors),
+                     data = eFOK_data)
+
+summary(test.egger)
 
 # test of moderator: group difference effect size for recall
 eff_size_recall <- data.frame()
@@ -196,7 +206,7 @@ summary(eFOK_reg2_model)
 
 # forest plot
 jpeg(file="./figures/forest_eFOK_meta_recog_mod.jpeg",
-     width=13, height=8, units="in", res=300)
+     width=15, height=10, units="in", res=300)
 forest(eFOK_reg3_model, slab = eFOK_data$ref)
 dev.off()
 
@@ -241,6 +251,17 @@ jpeg(file="./figures/funnel_sFOK_meta_all.jpeg",
      width=8, height=6, units="in", res=300)
 funnel(sFOK_meta_model)
 dev.off()  
+
+# test asymmetry (Egger's test)
+test.egger <- rma.mv(es, 
+                     var, 
+                     mod = var,
+                     random = list(~ 1 | effect,
+                                   ~ 1 | exp,
+                                   ~ 1 | authors),
+                     data = sFOK_data)
+
+summary(test.egger)
 
 # I² calculation
 W <- diag(1/sFOK_data$var)
