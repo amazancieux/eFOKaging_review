@@ -113,7 +113,7 @@ I2 <- 100 * eFOK_meta_model$sigma2/ (sum(eFOK_meta_model$sigma2) + (eFOK_meta_mo
 # forest plot
 jpeg(file="./figures/forest_eFOK_meta_all.jpeg",
      width=13, height=8, units="in", res=300)
-forest(eFOK_meta_model, slab = eFOK_data$ref)
+forest(eFOK_meta_model, xlab = 'Standardized Mean difference', slab = eFOK_data$ref)
 dev.off()
 
 # funnel plot 
@@ -243,7 +243,7 @@ summary(sFOK_meta_model)
 # forest plot
 jpeg(file="./figures/forest_sFOK_meta_all.jpeg",
      width=13, height=8, units="in", res=300)
-forest(sFOK_meta_model, slab = sFOK_data$ref)
+forest(sFOK_meta_model, xlab = 'Standardized Mean difference', slab = sFOK_data$ref)
 dev.off()
 
 # funnel plot 
