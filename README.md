@@ -1,13 +1,18 @@
 # Episodic and semantic FOKs in aging: a systematic review and meta-analysis
 
 This repository includes data and analysis script for the following article: 
-Devaluez*, Mazancieux*, Moulin, & Souchay (in prep). *Episodic and semantic feeling-of-knowing in aging: a systematic review and meta-analysis*
+Devaluez*, Mazancieux*, & Souchay (2023). Episodic and semantic feeling-of-knowing in aging: a systematic review and meta-analysis, *Scientific Report, (13)*, 16439, Open access [here]([https://website-name.com](https://www.nature.com/articles/s41598-023-36251-9))
 
+<br>
+
+*These authors contributed equally.
+
+<br>
 <br>
 
 **Abstract**
 
-Previous research shows a complex pattern of preservation and deterioration in metacognition in aging. One contested area is in older adults’ performance on feeling-of-knowing (FOK) tasks. While semantic FOK (sFOK) is preserved with age, studies on episodic tasks (eFOK) produce equivocal findings. To address this issue, we present a meta-analysis evaluating the age-related performance in the FOK paradigm. We included data taken from 18 published papers dealing with eFOK or sFOK in aging. We analysed the difference in metacognitive performance between younger and older adults, taking into account the major confound in this domain, the difference in performance levels, as a moderator. Across 22 reported effects we find a reliable age difference on eFOK accuracy, although this is somewhat moderated when taking into account final recognition differences between groups. Moreover, using aggregated data of published and unpublished study conducted in our lab, we performed follow-up analyses investigating recall and recognition difference as explanations of the eFOK deficit observed in aging. The published sFOK studies yield no age effect (9 comparisons). We highlight several methodological issues inherent in such research (e.g. the over-reliance on non-parametric correlations to assess metacognitive sensitivity which can be influenced by differences in performance levels). We also discuss the possibility aside of such concerns that the eFOK deficit in aging is a consequence of a memory decline. Finally, we propose recommendations for future research.
+A complex pattern of preservation and deterioration in metacognition in aging is found, especially regarding predicting future memory retrieval (i.e., feeling-of-knowing, FOK). While semantic FOK (sFOK) is preserved with age, studies on episodic tasks (eFOK) produce equivocal findings. We present a meta-analysis of 20 studies on eFOK and sFOK, analyzing the difference in metacognitive sensitivity between 922 younger and 966 older adults, taking into account the difference in memory performance. The sFOK studies yielded no overall age effect (8 effects, g = −0.10 [−0.29, 0.10]). However, we found a reliable age-group difference on eFOK (22 effects, g = 0.53 [0.28, 0.78]), which was moderated when considering recognition performance. Moreover, using aggregated data of 134 young and 235 older adults from published and unpublished studies from our lab, we investigated memory performance as an explanation of the eFOK deficit. We show that older adults are less metacognitively sensitive than younger adults for eFOKs which is, at least partly, due to the age-related memory decline. We highlight two non-exclusive explanations: a recollection deficit at play in the first and second order tasks, and a confound between first order performance and the measure used to assess metacognitive sensitivity.
 
+<
 
-**Key-words**: Metamemory, aging, feeling-of-knowing, metacognition  
