@@ -4,7 +4,7 @@ This repository includes data and analysis script for the following article:
 <br> <br>
 Devaluez*, Mazancieux*, & Souchay (2023). Episodic and semantic feeling-of-knowing in aging: a systematic review and meta-analysis, *Scientific Report, (13)*, 16439
 <br>
-Open access [here]([[https://website-name.com](https://www.nature.com/articles/s41598-023-36251-9)])  
+Open access [here](https://www.nature.com/articles/s41598-023-36251-9)
 <br> <br>
 *These authors contributed equally.
 <br>
